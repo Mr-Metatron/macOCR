@@ -96,6 +96,56 @@ Document the recent work done on `macOCR`, especially the new local Ollama OCR b
 - `docs/development-log.md`
 - `docs/project-overview.md`
 
+## 2026-03-25 - Repository Hygiene and Fork Remote
+
+### Scope
+
+Prepare the local clone to use the personal fork as `origin` while keeping machine-local build artifacts and Xcode user data out of version control.
+
+### Work Completed
+
+1. Reviewed the current working tree before changing repository settings.
+   - Confirmed that the only tracked user edit was in `AGENTS.md`
+   - Confirmed that the remaining visible changes were untracked local artifacts
+
+2. Updated `.gitignore`.
+   - Added `build/`
+   - Added `build-release/`
+   - Added ignore rules for `xcuserdata`
+
+3. Repointed the local git remotes.
+   - Set `origin` to `git@github.com:Mr-Metatron/macOCR.git`
+   - Added `upstream` as `https://github.com/schappim/macOCR.git`
+
+### Validation Performed
+
+1. Re-ran `git status --short --branch`.
+   - Confirmed that the working tree only shows tracked changes in:
+     - `.gitignore`
+     - `AGENTS.md`
+
+2. Re-ran `git remote -v`.
+   - Confirmed that `origin` points to the fork
+   - Confirmed that `upstream` points to the original repository
+
+3. Attempted remote synchronization.
+   - `git fetch origin`
+   - `git fetch upstream`
+   - Both were blocked by sandbox restrictions on `.git/FETCH_HEAD`
+
+### Important Notes
+
+1. The remote configuration change is local repository state.
+   - It is active in this clone immediately
+   - It is not stored in the git commit history
+
+2. A follow-up `git fetch` and `git push` still need elevated execution in this environment.
+
+### Files Changed During This Work
+
+- `.gitignore`
+- `docs/development-log.md`
+
 ## 2026-03-25 - Documentation Follow-up
 
 ### Scope

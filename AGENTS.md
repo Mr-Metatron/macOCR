@@ -7,9 +7,8 @@ This repository expects future agents to follow a consistent working pattern.
 When a new request arrives, follow this order:
 
 1. Read the relevant project documents first.
-   - Start with `README.md`
    - Read `docs/project-overview.md`
-   - Read `docs/development-log.md`
+   - Read `docs/development-log.md` (Note that the file could be REALLY LONG. If needed, read it with caution.)
    - Read any other directly relevant files before editing
 
 2. Explore the project freely before proposing changes.
