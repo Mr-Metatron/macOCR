@@ -71,6 +71,31 @@ For a parallel debug command, you can keep a second link:
 ln -sf /path/to/macOCR/build/Debug/ocr ~/.local/bin/ocr-debug
 ```
 
+### Raycast Script Command
+
+This repository now includes a ready-to-import Raycast Script Command at:
+
+```bash
+raycast/ocr-capture.sh
+```
+
+To install it in Raycast:
+
+1. Build `macOCR` so the binary exists at `build/Release/ocr`, or expose `ocr` on your `PATH`.
+2. In Raycast, open `Settings` -> `Extensions`.
+3. Choose `Add Script Directory`.
+4. Select the repository's `raycast/` directory.
+5. Assign a hotkey to `OCR Capture`.
+
+The script command:
+
+- launches the existing interactive region capture flow
+- accepts optional backend and language arguments
+- prints recognized text in Raycast
+- still lets `macOCR` copy the final text to the clipboard
+
+If your `ocr` binary lives somewhere else, set `MACOCR_BIN` in Raycast to point at that executable.
+
 Apple Silicon Install (via Homebrew):
 
 ```
@@ -97,6 +122,8 @@ sudo cp ocr /usr/local/bin
 
 
 When running the app the first time, you will likely be asked to allow the app access to your screen.
+
+If you launch `macOCR` through Raycast, make sure Raycast also has the required screen recording permissions in macOS System Settings.
 
 ![Enabling access to screen](https://files.littlebird.com.au/Shared-Image-2021-05-20-08-58-38.png)
 
