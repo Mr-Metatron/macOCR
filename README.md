@@ -62,6 +62,8 @@ Simply run `ocr` to interactively select a region of your screen:
 ocr
 ```
 
+By default, `ocr` uses the `auto` backend: it prefers a local Ollama OCR/vision model, and falls back to Apple's Vision OCR if Ollama is unavailable or the request fails.
+
 The recognized text will be printed to stdout and copied to your clipboard.
 
 ### Command Line Options
@@ -69,11 +71,15 @@ The recognized text will be printed to stdout and copied to your clipboard.
 | Option | Short | Description |
 |--------|-------|-------------|
 | `--help` | | Display available options |
-| `--language <code>` | `-l` | Set OCR language (macOS 11+) |
-| `--list-languages` | | List all supported OCR languages |
+| `--backend <auto\|vision\|ollama>` | `-b` | Select OCR backend. Defaults to `auto`, which prefers Ollama and falls back to Vision |
+| `--language <code>` | `-l` | Set Vision OCR language (macOS 11+), or pass a language hint to Ollama |
+| `--list-languages` | | List supported OCR languages for the selected backend |
 | `--rect <x,y,w,h>` | `-R` | Capture a specific screen region without interactive selection |
 | `--input <file>` | `-i` | Use an existing image file instead of screen capture |
 | `--save-image <path>` | `-s` | Save the captured screenshot to the specified path |
+| `--ollama-model <name>` | `-m` | Vision-capable Ollama model to use with `--backend ollama` |
+| `--ollama-host <url>` | | Ollama server URL. Defaults to `http://127.0.0.1:11434` |
+| `--ollama-prompt <text>` | | Override the default OCR extraction prompt sent to Ollama |
 
 ### Examples
 
@@ -87,6 +93,8 @@ ocr --language de-DE    # German
 **List supported languages:**
 ```bash
 ocr --list-languages
+ocr --backend auto --list-languages
+ocr --backend ollama --list-languages
 ```
 
 **Capture a specific screen region (for scripting):**
@@ -111,6 +119,34 @@ ocr --save-image ~/Desktop/capture.png
 ocr --rect 0,0,800,600 --save-image ~/Desktop/shot.png -l zh-Hans
 ```
 
+**Use Ollama as the OCR backend:**
+```bash
+# Let macOCR auto-select a local Ollama OCR/vision model first
+ocr
+
+# Force a local vision model served by Ollama
+ocr --backend ollama --ollama-model glm-ocr:latest
+
+# OCR an existing image with Ollama
+ocr -b ollama -m glm-ocr:latest -i ~/Desktop/scan.png
+
+# Point to a non-default Ollama host
+ocr -b ollama -m glm-ocr:latest --ollama-host http://192.168.1.10:11434
+
+# Force Apple's Vision OCR only
+ocr --backend vision
+```
+
+You can also configure Ollama via environment variables:
+
+```bash
+export OLLAMA_MODEL=glm-ocr:latest
+export OLLAMA_HOST=http://127.0.0.1:11434
+ocr
+```
+
+If `OLLAMA_MODEL` is not set, macOCR will try to auto-detect a local Ollama model and prefer OCR/vision-looking names such as `glm-ocr:latest`.
+
 ### Supported Languages
 
 On macOS 11 (Big Sur) and later, the following languages are supported:
@@ -124,7 +160,7 @@ On macOS 11 (Big Sur) and later, the following languages are supported:
 - `zh-Hans` - Simplified Chinese
 - `zh-Hant` - Traditional Chinese
 
-Run `ocr --list-languages` to see all available languages on your system.
+Run `ocr --list-languages` to see all available Vision languages on your system. The Ollama backend uses the selected model's native language support instead.
 
 ## Add as Shortcut Workflow (Mac Monterey 12+)
 1. Open up [MacOS Shortcuts](https://www.icloud.com/shortcuts/fa91687e481849d6a27ff873ec71599b) available on MacOS 12+.
