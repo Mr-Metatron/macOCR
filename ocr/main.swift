@@ -14,6 +14,7 @@ import ArgumentParserKit
 
 let defaultRecognitionLanguages = ["en-US"]
 let defaultOllamaHost = "http://127.0.0.1:11434"
+let defaultOllamaKeepAlive = "45m"
 let defaultOllamaPrompt = """
 Extract all readable text from this image.
 Return only the transcribed text.
@@ -39,6 +40,7 @@ struct OllamaConfiguration {
     let host: String
     let model: String
     let prompt: String
+    let keepAlive: String
 }
 
 struct OllamaGenerateRequest: Encodable {
@@ -46,7 +48,17 @@ struct OllamaGenerateRequest: Encodable {
     let prompt: String
     let images: [String]
     let stream: Bool
+    let keepAlive: String
     let options: OllamaOptions
+
+    enum CodingKeys: String, CodingKey {
+        case model
+        case prompt
+        case images
+        case stream
+        case keepAlive = "keep_alive"
+        case options
+    }
 }
 
 struct OllamaOptions: Encodable {
@@ -359,6 +371,7 @@ func recognizeTextWithOllama(fileURL: URL, configuration: OllamaConfiguration, l
         prompt: makeOllamaPrompt(basePrompt: configuration.prompt, languageHint: languageHint),
         images: [imageData.base64EncodedString()],
         stream: false,
+        keepAlive: configuration.keepAlive,
         options: OllamaOptions(temperature: 0)
     )
 
@@ -481,7 +494,12 @@ func makeOllamaConfiguration(arguments: ArgumentParser.Result,
         throw AppError.missingOllamaModel
     }
 
-    return OllamaConfiguration(host: host, model: model, prompt: prompt)
+    return OllamaConfiguration(
+        host: host,
+        model: model,
+        prompt: prompt,
+        keepAlive: defaultOllamaKeepAlive
+    )
 }
 
 do {

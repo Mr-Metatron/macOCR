@@ -23,6 +23,54 @@ If you're still wondering "how does this work?", I always find the .gif is the b
 
 Compile the code in this repo, or download a prebuilt binary ([Apple Silicon](https://files.littlebird.com.au/ocr.zip), [Intel](https://files.littlebird.com.au/ocr-EPiReQzFJ5Xw9wElWMqbiBayYLVp.zip)) and put it on your path.
 
+### Build From Source
+
+For the current repository layout, the most reliable shell build flow is:
+
+```bash
+cd /path/to/macOCR
+
+xcodebuild \
+  -project Pods/Pods.xcodeproj \
+  -scheme Pods-ocr \
+  -configuration Release \
+  -derivedDataPath build-release \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+
+xcodebuild \
+  -project ocr.xcodeproj \
+  -scheme ocr \
+  -configuration Release \
+  -derivedDataPath build-release \
+  BUILD_DIR=build \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+This produces the CLI binary at:
+
+```bash
+build/Release/ocr
+```
+
+If you are working interactively in Xcode, prefer opening `ocr.xcworkspace`.
+
+### Put a Local Build on Your PATH
+
+To expose the current `Release` build as `ocr` without copying the binary each time:
+
+```bash
+mkdir -p ~/.local/bin
+ln -sf /path/to/macOCR/build/Release/ocr ~/.local/bin/ocr
+```
+
+For a parallel debug command, you can keep a second link:
+
+```bash
+ln -sf /path/to/macOCR/build/Debug/ocr ~/.local/bin/ocr-debug
+```
+
 Apple Silicon Install (via Homebrew):
 
 ```
@@ -66,6 +114,7 @@ By default, `ocr` uses the `auto` backend: it prefers a local Ollama OCR/vision 
 
 The recognized text will be printed to stdout and copied to your clipboard.
 Backend-selection and fallback notices are written to stderr so stdout remains OCR text only.
+When Ollama is used, macOCR asks the Ollama server to keep the selected model loaded for 45 minutes between requests to reduce repeated model reloads.
 
 ### Command Line Options
 
@@ -148,6 +197,7 @@ ocr
 
 If `OLLAMA_MODEL` is not set, macOCR will try to auto-detect a local Ollama model and prefer OCR/vision-looking names such as `glm-ocr:latest`.
 `--ollama-host` accepts either the server root such as `http://127.0.0.1:11434` or a base URL ending in `/api`.
+Successful Ollama OCR requests are sent with `keep_alive` set to `45m`.
 
 ### Supported Languages
 

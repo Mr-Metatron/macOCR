@@ -176,3 +176,61 @@ Address three user-visible behaviors that could feel unpredictable:
 - `README.md`
 - `docs/development-log.md`
 - `docs/project-overview.md`
+
+## 2026-03-25 - Ollama Keep-Alive and Build Docs
+
+### Scope
+
+Keep Ollama OCR models loaded for 45 minutes after a successful request, and sync the repository docs with the currently working local release build flow.
+
+### Work Completed
+
+1. Updated the Ollama request payload in `ocr/main.swift`.
+   - Added a default keep-alive duration of `45m`
+   - Included `keep_alive` in the JSON body sent to `/api/generate`
+   - Wired the keep-alive value through the existing `OllamaConfiguration`
+
+2. Updated `README.md`.
+   - Added the current two-step shell release build flow
+   - Added a symlink-based PATH setup example for local `Release` and `Debug` binaries
+   - Documented that Ollama OCR requests keep the selected model loaded for 45 minutes
+
+3. Updated `docs/project-overview.md`.
+   - Documented `keep_alive: "45m"` in the Ollama request body
+   - Replaced the older shell-build caveat with the now-verified two-step project build flow
+   - Documented that the release binary lands at `build/Release/ocr`
+
+### Validation Performed
+
+1. Rebuilt the local release dependencies.
+   - `xcodebuild -project Pods/Pods.xcodeproj -scheme Pods-ocr -configuration Release -derivedDataPath build-release CODE_SIGNING_ALLOWED=NO build`
+   - Verified:
+     - `build/Release/ArgumentParserKit/ArgumentParserKit.modulemap`
+     - `build/Release/ScreenCapture/ScreenCapture.modulemap`
+     - `build/Release/libPods-ocr.a`
+
+2. Rebuilt the app target in `Release`.
+   - `xcodebuild -project ocr.xcodeproj -scheme ocr -configuration Release -derivedDataPath build-release BUILD_DIR=build CODE_SIGNING_ALLOWED=NO build`
+   - Verified:
+     - `build/Release/ocr`
+     - `build/Release/ocr.dSYM`
+
+3. Verified the installed commands still run.
+   - `ocr --help` completed successfully
+   - `ocr-debug --help` completed successfully
+
+4. Reviewed the final request encoding path in source.
+   - `OllamaGenerateRequest` now maps `keepAlive` to the `keep_alive` API field
+
+### Important Notes
+
+1. The local Ollama HTTP API was unavailable during this task.
+   - A live OCR request was not executed end-to-end today
+   - The keep-alive behavior was validated by source inspection and successful rebuild, not by a live Ollama response
+
+### Files Changed During This Work
+
+- `ocr/main.swift`
+- `README.md`
+- `docs/development-log.md`
+- `docs/project-overview.md`

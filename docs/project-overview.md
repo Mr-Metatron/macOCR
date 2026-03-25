@@ -84,6 +84,7 @@ Behavior:
 7. Print the Vision fallback selection to stderr.
 
 This mode is designed for the exact workflow: "type `ocr`, prefer local Ollama first".
+Successful Ollama OCR requests ask Ollama to keep the chosen model loaded for 45 minutes so repeated OCR runs avoid unnecessary reloads.
 
 ### `ollama`
 
@@ -98,6 +99,7 @@ Behavior:
 5. Return plain OCR text.
 
 This mode does not fall back to Vision.
+Successful requests also ask Ollama to keep the selected model loaded for 45 minutes.
 
 ### `vision`
 
@@ -141,6 +143,7 @@ The request body uses:
 - `prompt`
 - `images` as base64
 - `stream: false`
+- `keep_alive: "45m"`
 - `temperature: 0`
 
 The default OCR prompt is intentionally strict: it asks for transcription only and avoids summaries or descriptions.
@@ -198,12 +201,20 @@ Captured images now use a unique temporary file per run and are removed after pr
 1. The project should be treated as a workspace-based CocoaPods app.
    - Prefer `ocr.xcworkspace` inside Xcode.
 
-2. Shell `xcodebuild` validation has been unreliable in the current local environment.
-   - Workspace invocation reported invalid workspace in shell
-   - Project invocation hit signing or dependency environment issues
-   - Xcode editor diagnostics were clean after the recent changes
+2. Shell `xcodebuild` works most reliably as a two-step project build.
+   - `xcodebuild -workspace ocr.xcworkspace ...` still reports the workspace as invalid in shell on this machine
+   - Build CocoaPods dependencies first with `Pods/Pods.xcodeproj` and scheme `Pods-ocr`
+   - Then build the app target with `ocr.xcodeproj`, scheme `ocr`, and `BUILD_DIR=build`
+   - The resulting release binary lands at `build/Release/ocr`
 
-3. The local `ollama` command line binary is unstable on this machine.
+3. Current reliable shell release build commands:
+
+```bash
+xcodebuild -project Pods/Pods.xcodeproj -scheme Pods-ocr -configuration Release -derivedDataPath build-release CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project ocr.xcodeproj -scheme ocr -configuration Release -derivedDataPath build-release BUILD_DIR=build CODE_SIGNING_ALLOWED=NO build
+```
+
+4. The local `ollama` command line binary is unstable on this machine.
    - It crashes during `ollama list`
    - The Ollama HTTP API is healthy and should be used for diagnostics instead
 
@@ -221,7 +232,13 @@ If a future agent needs to extend behavior, start here:
 curl -sS http://127.0.0.1:11434/api/tags
 ```
 
-6. If changing backend logic, focus on:
+6. Confirm the latest local release build with:
+
+```bash
+ls -l build/Release/ocr
+```
+
+7. If changing backend logic, focus on:
    - `parseBackend`
    - `makeOllamaConfiguration`
    - `recognizeTextWithVision`
