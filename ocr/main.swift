@@ -96,7 +96,7 @@ enum AppError: LocalizedError {
         case .failedToCreateCGImage(let path):
             return "Unable to convert image into a CGImage: \(path)"
         case .screenCaptureFailed:
-            return "Screen capture did not produce an image."
+            return "Screen capture did not produce an image. The capture may have been canceled."
         case .missingOllamaModel:
             return "No Ollama model was configured or auto-detected. Set --ollama-model or OLLAMA_MODEL."
         case .invalidOllamaHost(let value):
@@ -125,6 +125,14 @@ func copyToClipboard(_ text: String) {
 func emitRecognizedText(_ text: String) {
     print(text)
     copyToClipboard(text)
+}
+
+func emitRuntimeNotice(_ message: String) {
+    fputs("Info: \(message)\n", stderr)
+}
+
+func emitRuntimeWarning(_ message: String) {
+    fputs("Warning: \(message)\n", stderr)
 }
 
 func parseBackend(_ value: String?) throws -> OCRBackend {
@@ -211,12 +219,22 @@ func makeOllamaAPIURL(host: String, endpoint: String) throws -> URL {
         throw AppError.invalidOllamaHost(host)
     }
 
-    let normalizedPath = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-    if normalizedPath.isEmpty {
-        components.path = "/api/\(endpoint)"
+    var pathSegments = components.path
+        .split(separator: "/")
+        .map(String.init)
+
+    if pathSegments.isEmpty {
+        pathSegments = ["api", endpoint]
+    } else if pathSegments.last == "api" {
+        pathSegments.append(endpoint)
+    } else if pathSegments.count >= 2 && pathSegments[pathSegments.count - 2] == "api" {
+        pathSegments[pathSegments.count - 1] = endpoint
     } else {
-        components.path = "/\(normalizedPath)/api/\(endpoint)"
+        pathSegments.append("api")
+        pathSegments.append(endpoint)
     }
+
+    components.path = "/" + pathSegments.joined(separator: "/")
 
     guard let url = components.url else {
         throw AppError.invalidOllamaHost(host)
@@ -375,6 +393,12 @@ func recognizeTextWithOllama(fileURL: URL, configuration: OllamaConfiguration, l
     return responseText.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
+func makeTemporaryImageURL() -> URL {
+    FileManager.default.temporaryDirectory
+        .appendingPathComponent("macocr-\(UUID().uuidString)")
+        .appendingPathExtension("png")
+}
+
 func resolveImageURL(inputFile: String?, rect: RectValues?, saveImagePath: String?) throws -> URL {
     if let inputFile = inputFile {
         let expandedPath = (inputFile as NSString).expandingTildeInPath
@@ -385,15 +409,15 @@ func resolveImageURL(inputFile: String?, rect: RectValues?, saveImagePath: Strin
         return imageURL
     }
 
-    let tempPath = "/tmp/ocr.png"
+    let tempURL = makeTemporaryImageURL()
+    let tempPath = tempURL.path
     if let rect = rect {
         _ = ScreenCapture.captureRect(destination: tempPath, x: rect.x, y: rect.y, width: rect.w, height: rect.h)
     } else {
         _ = ScreenCapture.captureRegion(destination: tempPath)
     }
 
-    let imageURL = URL(fileURLWithPath: tempPath)
-    guard FileManager.default.fileExists(atPath: imageURL.path) else {
+    guard FileManager.default.fileExists(atPath: tempURL.path) else {
         throw AppError.screenCaptureFailed
     }
 
@@ -409,7 +433,7 @@ func resolveImageURL(inputFile: String?, rect: RectValues?, saveImagePath: Strin
         }
     }
 
-    return imageURL
+    return tempURL
 }
 
 func listRecognitionLanguages(for backend: OCRBackend) throws {
@@ -491,24 +515,33 @@ do {
     let saveImagePath = parsedArguments.get(saveImageOption)
     let languageHint = parsedArguments.get(languageOption)
     let imageURL = try resolveImageURL(inputFile: inputFile, rect: rect, saveImagePath: saveImagePath)
+    let shouldRemoveTemporaryImage = (inputFile == nil)
+    defer {
+        if shouldRemoveTemporaryImage {
+            try? FileManager.default.removeItem(at: imageURL)
+        }
+    }
 
     let recognizedText: String
     switch backend {
     case .auto:
         do {
+            let ollamaConfiguration = try makeOllamaConfiguration(
+                arguments: parsedArguments,
+                modelOption: ollamaModelOption,
+                hostOption: ollamaHostOption,
+                promptOption: ollamaPromptOption
+            )
+            emitRuntimeNotice("Using backend: ollama (model: \(ollamaConfiguration.model))")
             recognizedText = try recognizeTextWithOllama(
                 fileURL: imageURL,
-                configuration: try makeOllamaConfiguration(
-                    arguments: parsedArguments,
-                    modelOption: ollamaModelOption,
-                    hostOption: ollamaHostOption,
-                    promptOption: ollamaPromptOption
-                ),
+                configuration: ollamaConfiguration,
                 languageHint: languageHint
             )
         } catch {
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            fputs("Warning: Ollama OCR failed, falling back to Vision: \(message)\n", stderr)
+            emitRuntimeWarning("Ollama OCR failed, falling back to Vision: \(message)")
+            emitRuntimeNotice("Using backend: vision")
             recognizedText = try recognizeTextWithVision(
                 fileURL: imageURL,
                 recognitionLanguages: try recognitionLanguagesForVision(languageHint: languageHint)

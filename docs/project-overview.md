@@ -63,6 +63,7 @@ At a high level, the application does this:
    - fixed rectangle screen capture
    - existing file via `--input`
 4. Run OCR with the selected backend.
+   - In `auto`, report the chosen backend to stderr
 5. Print recognized text to stdout.
 6. Copy the same text to the macOS clipboard.
 
@@ -78,7 +79,9 @@ Behavior:
 2. If no model is explicitly configured, query local Ollama model tags.
 3. Prefer OCR/vision-looking local model names.
 4. Attempt OCR through Ollama.
-5. If Ollama setup or request fails, print a warning to stderr and fall back to Vision OCR.
+5. Print the chosen Ollama backend and model to stderr.
+6. If Ollama setup or request fails, print a warning to stderr and fall back to Vision OCR.
+7. Print the Vision fallback selection to stderr.
 
 This mode is designed for the exact workflow: "type `ocr`, prefer local Ollama first".
 
@@ -116,6 +119,11 @@ Default host:
 ```text
 http://127.0.0.1:11434
 ```
+
+Accepted forms:
+
+- `http://127.0.0.1:11434`
+- `http://127.0.0.1:11434/api`
 
 Relevant options and env vars:
 
@@ -165,6 +173,7 @@ Optional image persistence:
 - `--save-image <path>`
 
 The screen capture implementation comes from the `ScreenCapture` CocoaPod and ultimately uses macOS screenshot tooling.
+Captured images now use a unique temporary file per run and are removed after processing, which avoids reusing stale screenshots after a canceled selection.
 
 ## Dependencies
 

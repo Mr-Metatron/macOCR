@@ -65,6 +65,7 @@ ocr
 By default, `ocr` uses the `auto` backend: it prefers a local Ollama OCR/vision model, and falls back to Apple's Vision OCR if Ollama is unavailable or the request fails.
 
 The recognized text will be printed to stdout and copied to your clipboard.
+Backend-selection and fallback notices are written to stderr so stdout remains OCR text only.
 
 ### Command Line Options
 
@@ -78,7 +79,7 @@ The recognized text will be printed to stdout and copied to your clipboard.
 | `--input <file>` | `-i` | Use an existing image file instead of screen capture |
 | `--save-image <path>` | `-s` | Save the captured screenshot to the specified path |
 | `--ollama-model <name>` | `-m` | Vision-capable Ollama model to use with `--backend ollama` |
-| `--ollama-host <url>` | | Ollama server URL. Defaults to `http://127.0.0.1:11434` |
+| `--ollama-host <url>` | | Ollama server URL or `/api` base URL. Defaults to `http://127.0.0.1:11434` |
 | `--ollama-prompt <text>` | | Override the default OCR extraction prompt sent to Ollama |
 
 ### Examples
@@ -146,6 +147,7 @@ ocr
 ```
 
 If `OLLAMA_MODEL` is not set, macOCR will try to auto-detect a local Ollama model and prefer OCR/vision-looking names such as `glm-ocr:latest`.
+`--ollama-host` accepts either the server root such as `http://127.0.0.1:11434` or a base URL ending in `/api`.
 
 ### Supported Languages
 

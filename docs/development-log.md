@@ -125,3 +125,54 @@ Add repository-level agent workflow instructions so future agents follow the sam
 - `AGENTS.md`
 - `docs/development-log.md`
 - `docs/project-overview.md`
+
+## 2026-03-25 - Predictability Fixes
+
+### Scope
+
+Address three user-visible behaviors that could feel unpredictable:
+
+1. canceled screen capture reusing an old temp image
+2. `auto` mode not telling the user which backend/model actually ran
+3. `--ollama-host` duplicating `/api` in some common host inputs
+
+### Work Completed
+
+1. Reworked temporary screenshot handling in `ocr/main.swift`.
+   - Stopped using a shared fixed temp filename
+   - Switched to a unique temporary PNG path per run
+   - Added cleanup after OCR completes
+   - This prevents stale screenshot reuse after a canceled interactive selection
+
+2. Added runtime backend notices to stderr for `auto` mode.
+   - When Ollama is selected, the app now reports the chosen model
+   - When Ollama fails and Vision is used, the fallback is explicitly reported
+   - Stdout remains reserved for OCR text output
+
+3. Hardened Ollama host URL normalization.
+   - `--ollama-host` now accepts both server roots and `/api` base URLs
+   - Paths ending in `/api` no longer become `/api/api/...`
+   - Paths already ending in `/api/<endpoint>` are normalized to the requested endpoint
+
+4. Updated user and handoff documentation.
+   - README now explains stderr backend notices
+   - README now documents `/api`-suffixed host compatibility
+   - Project overview now reflects the temp file and stderr behavior
+
+### Validation Performed
+
+1. Re-ran Xcode source diagnostics on `ocr/main.swift`
+   - No file diagnostics remained
+   - No workspace errors remained in the issue navigator
+
+2. Reviewed the final runtime paths in source.
+   - Temporary captures now use unique files
+   - `auto` mode now emits explicit backend notices
+   - Ollama URL building now normalizes `/api` correctly
+
+### Files Changed During This Fix
+
+- `ocr/main.swift`
+- `README.md`
+- `docs/development-log.md`
+- `docs/project-overview.md`
