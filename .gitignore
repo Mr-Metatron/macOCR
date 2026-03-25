@@ -1,3 +1,7 @@
 .DS_Store
 *.DS_Store
 ocr_binary
+build/
+build-release/
+**/xcuserdata/
+**/*.xcuserdatad/
