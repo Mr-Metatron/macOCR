@@ -127,6 +127,50 @@ If you launch `macOCR` through Raycast, make sure Raycast also has the required 
 
 ![Enabling access to screen](https://files.littlebird.com.au/Shared-Image-2021-05-20-08-58-38.png)
 
+## MLX-VLM Phase 0 Prep
+
+The current shipped backend is still `auto | vision | ollama`.
+Before changing `macOCR` to `mlx-vlm`, this repository now includes a Phase 0 validation toolkit for local `GLM-OCR` testing.
+
+Files added for this work:
+
+- `scripts/mlx-vlm/setup-venv.sh`
+- `scripts/mlx-vlm/start-server.sh`
+- `scripts/mlx-vlm/smoke-test.sh`
+- `docs/mlx-vlm-phase0.md`
+
+The Phase 0 defaults are:
+
+- Python: `/Users/metatron/.local/share/uv/python/cpython-3.11-macos-aarch64-none/bin/python3.11`
+- server: `http://127.0.0.1:18080`
+- baseline model: `mlx-community/GLM-OCR-bf16`
+
+Setup:
+
+```bash
+scripts/mlx-vlm/setup-venv.sh
+```
+
+Start the local server:
+
+```bash
+scripts/mlx-vlm/start-server.sh
+```
+
+Run the smoke test against one or more images:
+
+```bash
+scripts/mlx-vlm/smoke-test.sh /path/to/image-1.png /path/to/image-2.jpg
+```
+
+Important note:
+run MLX commands from a normal Terminal session with Metal access.
+During validation, `mlx.core` crashed inside the Codex sandbox but worked normally outside it.
+
+Current status:
+the MLX-VLM runtime path and OpenAI-style server endpoints are working, but the initial `GLM-OCR` smoke tests still returned empty markdown on browser-rendered OCR samples.
+See `docs/mlx-vlm-phase0.md` before starting the actual backend migration in `ocr/main.swift`.
+
 ## Usage
 
 ### Basic Usage

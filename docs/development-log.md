@@ -1,5 +1,120 @@
 # Development Log
 
+## 2026-04-08 - MLX-VLM Phase 0 Setup
+
+### Scope
+
+Prepare and validate the local `GLM-OCR` on `mlx-vlm` workflow before changing `macOCR` itself.
+
+This phase was intentionally limited to:
+
+1. local runtime setup
+2. CLI inference validation
+3. local HTTP server validation
+4. repository scripts and docs for repeating the same setup later
+
+### Work Completed
+
+1. Added a small repository-owned MLX-VLM toolkit.
+   - New file: `scripts/mlx-vlm/setup-venv.sh`
+   - New file: `scripts/mlx-vlm/start-server.sh`
+   - New file: `scripts/mlx-vlm/smoke-test.sh`
+
+2. Added a dedicated Phase 0 handoff document.
+   - New file: `docs/mlx-vlm-phase0.md`
+   - Records the validated Python path, default server port, and request shapes
+   - Records the current blocker discovered during OCR quality validation
+
+3. Updated repository docs.
+   - `README.md` now points future work to the Phase 0 scripts and doc
+   - `docs/project-overview.md` now includes the new `scripts/mlx-vlm/` toolkit
+
+4. Verified the local MLX runtime outside the Codex sandbox.
+   - Confirmed that `mlx.core` crashes in the sandbox because no Metal device is visible there
+   - Confirmed that the same import succeeds outside the sandbox and reports `Device(gpu, 0)`
+
+5. Installed and exercised the local `mlx-vlm` environment.
+   - Python used: `/Users/metatron/.local/share/uv/python/cpython-3.11-macos-aarch64-none/bin/python3.11`
+   - Installed package version: `mlx-vlm 0.4.4`
+   - Installed helper dependency: `pillow`
+
+6. Validated the local HTTP server path on `127.0.0.1:18080`.
+   - Started `mlx_vlm.server` with `mlx-community/GLM-OCR-bf16`
+   - Confirmed `GET /health`
+   - Confirmed `GET /models`
+   - Confirmed `POST /chat/completions`
+
+7. Tested two local MLX GLM-OCR checkpoints.
+   - `mlx-community/GLM-OCR-bf16`
+   - `EZCon/GLM-OCR-8bit-mlx`
+   - Both checkpoints loaded successfully and answered requests through the same server path
+
+### Validation Performed
+
+1. MLX device visibility
+   - Outside sandbox:
+     - `/tmp/macocr-mlx-phase0/.venv/bin/python -c 'import mlx.core as mx; print(mx.default_device())'`
+   - Result:
+     - `Device(gpu, 0)`
+
+2. CLI generate path
+   - Ran `python -m mlx_vlm generate` against local browser-rendered OCR smoke images
+   - Used prompt variants including:
+     - `Text Recognition:`
+     - `Document Parsing:`
+     - a plain-language transcription prompt
+   - The CLI path executed successfully on GPU
+
+3. Local server path
+   - Started:
+     - `python -m mlx_vlm server --model mlx-community/GLM-OCR-bf16 --host 127.0.0.1 --port 18080`
+   - Confirmed health response:
+     - `{"status":"healthy","loaded_model":"mlx-community/GLM-OCR-bf16","loaded_adapter":null}`
+   - Confirmed models response included:
+     - `EZCon/GLM-OCR-8bit-mlx`
+     - `mlx-community/GLM-OCR-bf16`
+
+4. `/chat/completions` response shape
+   - Sent an OpenAI-style request with:
+     - `model`
+     - `messages`
+     - `input_image`
+     - `input_text`
+     - `enable_thinking`
+     - `max_tokens`
+   - Confirmed the server returns:
+     - `choices[0].message.content`
+     - `usage.input_tokens`
+     - `usage.output_tokens`
+     - `usage.total_tokens`
+     - `usage.prompt_tps`
+     - `usage.generation_tps`
+     - `usage.peak_memory`
+
+### Important Notes
+
+1. The environment and transport layers are now validated, but the OCR output quality is not yet good enough.
+   - On browser-rendered smoke images, both GLM-OCR checkpoints returned either empty markdown or otherwise non-useful OCR output
+   - This means the server contract is ready for future Swift integration, but the model/prompt path still needs work before replacing Ollama in `macOCR`
+
+2. The server port for this phase is intentionally `18080`.
+   - This avoids using `8080`
+   - Future MLX backend work should keep that default unless there is a good reason to change it
+
+3. MLX validation must run outside sandboxed shells on this machine.
+   - This is a practical environment rule, not a repository code issue
+   - The new scripts and docs now call that out explicitly
+
+### Files Changed During This Work
+
+- `scripts/mlx-vlm/setup-venv.sh`
+- `scripts/mlx-vlm/start-server.sh`
+- `scripts/mlx-vlm/smoke-test.sh`
+- `docs/mlx-vlm-phase0.md`
+- `README.md`
+- `docs/project-overview.md`
+- `docs/development-log.md`
+
 ## 2026-03-25 - Raycast Script Command
 
 ### Scope
