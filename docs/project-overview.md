@@ -20,11 +20,6 @@ macOCR/
   README.md
   Podfile
   Pods/
-  scripts/
-    mlx-vlm/
-      setup-venv.sh
-      start-server.sh
-      smoke-test.sh
   ocr/
     main.swift
   raycast/
@@ -33,7 +28,6 @@ macOCR/
   ocr.xcworkspace/
   docs/
     development-log.md
-    mlx-vlm-phase0.md
     project-overview.md
 ```
 
@@ -50,23 +44,6 @@ macOCR/
 
 - `README.md`
   - User-facing install and usage documentation
-
-- `scripts/mlx-vlm/setup-venv.sh`
-  - Creates or reuses a local MLX-VLM Python environment
-  - Installs `mlx-vlm` and `pillow`
-
-- `scripts/mlx-vlm/start-server.sh`
-  - Starts `mlx_vlm.server`
-  - Defaults to `127.0.0.1:18080`
-  - Uses `mlx-community/GLM-OCR-bf16` by default
-
-- `scripts/mlx-vlm/smoke-test.sh`
-  - Runs Phase 0 validation against one or more image files
-  - Exercises both the CLI generate path and the local HTTP API
-
-- `docs/mlx-vlm-phase0.md`
-  - Captures the validated Phase 0 setup commands
-  - Records the current MLX-VLM endpoint shapes and validation status
 
 - `raycast/ocr-capture.sh`
   - Ready-to-import Raycast Script Command
@@ -240,23 +217,6 @@ This keeps Raycast support thin and aligned with the main CLI entrypoint instead
   - older command line argument parsing library
   - note that option handles are `OptionArgument<T>`, not modern Swift ArgumentParser types
 
-## MLX-VLM Phase 0 Status
-
-The repository now includes a small Phase 0 toolkit for validating local MLX-VLM before changing the `macOCR` runtime.
-
-Current Phase 0 assumptions:
-
-- local server host: `127.0.0.1`
-- local server port: `18080`
-- baseline model: `mlx-community/GLM-OCR-bf16`
-- transport shape for future Swift integration:
-  - `GET /health`
-  - `GET /models`
-  - `POST /chat/completions`
-
-This toolkit does not change the current `macOCR` backend yet.
-The shipped application logic still uses Ollama and Vision exactly as documented above.
-
 ## Current Build and Verification Notes
 
 1. The project should be treated as a workspace-based CocoaPods app.
@@ -278,11 +238,6 @@ xcodebuild -project ocr.xcodeproj -scheme ocr -configuration Release -derivedDat
 4. The local `ollama` command line binary is unstable on this machine.
    - It crashes during `ollama list`
    - The Ollama HTTP API is healthy and should be used for diagnostics instead
-
-5. MLX commands require direct Metal access on this machine.
-   - `mlx.core` crashed inside the Codex sandbox with an `NSRangeException`
-   - The same import succeeded immediately in a normal terminal and reported `Device(gpu, 0)`
-   - Run the scripts in `scripts/mlx-vlm/` outside sandboxed shells
 
 ## Suggested Agent Starting Points
 
@@ -310,10 +265,6 @@ ls -l build/Release/ocr
    - `recognizeTextWithVision`
    - `recognizeTextWithOllama`
    - the main backend switch near the bottom of `main.swift`
-8. If continuing the MLX migration prep, read:
-   - `docs/mlx-vlm-phase0.md`
-   - `scripts/mlx-vlm/start-server.sh`
-   - `scripts/mlx-vlm/smoke-test.sh`
 
 ## Good Next Improvements
 
@@ -321,4 +272,3 @@ ls -l build/Release/ocr
 - Add automated tests for backend selection and Ollama response parsing
 - Improve model auto-detection with explicit capability metadata if Ollama exposes it
 - Add optional structured debug logging for backend selection and fallback decisions
-- Resolve the current GLM-OCR-on-MLX output quality issue before replacing the Ollama backend
