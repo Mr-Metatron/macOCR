@@ -22,6 +22,8 @@ macOCR/
   Pods/
   ocr/
     main.swift
+  raycast/
+    ocr-capture.sh
   ocr.xcodeproj/
   ocr.xcworkspace/
   docs/
@@ -42,6 +44,11 @@ macOCR/
 
 - `README.md`
   - User-facing install and usage documentation
+
+- `raycast/ocr-capture.sh`
+  - Ready-to-import Raycast Script Command
+  - Wraps the existing `ocr` CLI instead of duplicating OCR logic
+  - Supports optional backend and language arguments for Raycast launches
 
 - `AGENTS.md`
   - Repository-level workflow for future agents
@@ -177,6 +184,20 @@ Optional image persistence:
 
 The screen capture implementation comes from the `ScreenCapture` CocoaPod and ultimately uses macOS screenshot tooling.
 Captured images now use a unique temporary file per run and are removed after processing, which avoids reusing stale screenshots after a canceled selection.
+
+## Raycast Integration
+
+The repository now includes a small Raycast wrapper script in `raycast/ocr-capture.sh`.
+
+Behavior:
+
+1. Prefer `MACOCR_BIN` when explicitly configured.
+2. Otherwise use the local repository build at `build/Release/ocr` when present.
+3. Otherwise fall back to `ocr` on `PATH`.
+4. Forward optional backend and language arguments into the existing CLI.
+5. Show OCR text in Raycast while leaving clipboard handling to `macOCR`.
+
+This keeps Raycast support thin and aligned with the main CLI entrypoint instead of introducing a second OCR implementation path.
 
 ## Dependencies
 

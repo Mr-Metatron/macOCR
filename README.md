@@ -1,5 +1,7 @@
 # macOCR
 
+> This is an enhanced fork of [schappim/macOCR](https://github.com/schappim/macOCR) that adds Ollama-powered OCR, flexible backend selection (auto/Vision/Ollama), and Raycast Script Command integration — while keeping the original Vision-based OCR fully functional.
+
 macOCR is a command line app that enables you to turn any text on your screen into text on your clipboard.
 When you invoke the `ocr` command, a "screen capture" like cursor is shown.
 Any text within the bounds will be converted to text.
@@ -71,11 +73,38 @@ For a parallel debug command, you can keep a second link:
 ln -sf /path/to/macOCR/build/Debug/ocr ~/.local/bin/ocr-debug
 ```
 
+### Raycast Script Command
+
+This repository now includes a ready-to-import Raycast Script Command at:
+
+```bash
+raycast/ocr-capture.sh
+```
+
+To install it in Raycast:
+
+1. Build `macOCR` so the binary exists at `build/Release/ocr`, or expose `ocr` on your `PATH`.
+2. In Raycast, open `Settings` -> `Extensions`.
+3. Choose `Add Script Directory`.
+4. Select the repository's `raycast/` directory.
+5. Assign a hotkey to `OCR Capture`.
+
+The script command:
+
+- launches the existing interactive region capture flow
+- accepts optional backend and language arguments
+- prints recognized text in Raycast
+- still lets `macOCR` copy the final text to the clipboard
+
+If your `ocr` binary lives somewhere else, set `MACOCR_BIN` in Raycast to point at that executable.
+
 Apple Silicon Install (via Homebrew):
 
 ```
 brew install schappim/ocr/ocr
 ```
+
+> **Note:** The Homebrew formula and prebuilt binaries above install the **original upstream** macOCR without Ollama backend support. To use all features described in this README (auto backend, Ollama integration, etc.), [build from source](#build-from-source).
 
 Once installed, you can then use the [macOS Shortcut Workflow](https://www.icloud.com/shortcuts/fa91687e481849d6a27ff873ec71599b) (see below for details)
 
@@ -97,6 +126,8 @@ sudo cp ocr /usr/local/bin
 
 
 When running the app the first time, you will likely be asked to allow the app access to your screen.
+
+If you launch `macOCR` through Raycast, make sure Raycast also has the required screen recording permissions in macOS System Settings.
 
 ![Enabling access to screen](https://files.littlebird.com.au/Shared-Image-2021-05-20-08-58-38.png)
 
@@ -218,7 +249,9 @@ Run `ocr --list-languages` to see all available Vision languages on your system.
 1. Open up [MacOS Shortcuts](https://www.icloud.com/shortcuts/fa91687e481849d6a27ff873ec71599b) available on MacOS 12+.
 2. Create new `Shortcut`
 3. Add `Run Shell script`
-4. Set input as `/usr/local/bin/ocr` (runs this app)
+4. Set input to one of these (runs this app):
+  - `/opt/homebrew/bin/ocr` (if installed via Homebrew on Apple Silicon)
+  - `/usr/local/bin/ocr` (if installed manually or built from source)
 5. Goto `Shortcut Details`
 
 <img width="300px" src="https://user-images.githubusercontent.com/11782590/164676495-3c07a73f-5254-47eb-a4ff-d6a943617954.png" alt="settings" />
@@ -233,12 +266,16 @@ This should run on macOS Catalina (10.15) and above. Language selection and exte
 
 ## Who made this?
 
-macOCR was made by [Marcus Schappi](https://twitter.com/schappi). I create software ([and even hardware](https://chickcom.com/hardware)) to automate ecommerce, including:
+macOCR was originally created by [Marcus Schappi](https://twitter.com/schappi). This fork adds:
 
-* [USDZ.app](https://usdz.app). [Create Augmented Reality Object Captures with USDZ.app](https://usdz.app).
-* [Chick Commerce](https://chickcom.com/).
-* This [free Australia Post app on Shopify](https://apps.shopify.com/auspost-shipping).
-* [Script Ninja](https://apps.shopify.com/cockatoo) which enables you to create powerful scripts and tools to automate your Shopify store.
+- **Ollama backend** — use local vision-language models via Ollama for OCR, with automatic model detection and keep-alive support
+- **Auto backend** — prefers Ollama when available, falls back gracefully to Apple Vision OCR
+- **Raycast Script Command** — drop-in script for Raycast users with backend and language selection
+- **Expanded CLI** — model selection, host configuration, custom OCR prompts, and more
+
+Original upstream: [schappim/macOCR](https://github.com/schappim/macOCR)
+
+> From the original author: I create software ([and even hardware](https://chickcom.com/hardware)) to automate ecommerce, including [USDZ.app](https://usdz.app), [Chick Commerce](https://chickcom.com/), [Australia Post app on Shopify](https://apps.shopify.com/auspost-shipping), and [Script Ninja](https://apps.shopify.com/cockatoo).
 
 ## Thoughts on Sherlocking?
 
@@ -246,7 +283,7 @@ Apple, please sherlock this software!
 
 ## MIT License
 
-Copyright 2021 Marcus Schappi
+Copyright 2021 Marcus Schappi (original), with modifications.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

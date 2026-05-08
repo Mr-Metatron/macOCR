@@ -1,5 +1,60 @@
 # Development Log
 
+## 2026-03-25 - Raycast Script Command
+
+### Scope
+
+Add a repository-owned Raycast integration so the existing `macOCR` CLI can be triggered from Raycast without requiring users to hand-write their own wrapper script.
+
+### Work Completed
+
+1. Added a Raycast Script Command wrapper.
+   - New file: `raycast/ocr-capture.sh`
+   - Uses `build/Release/ocr` by default when available
+   - Falls back to `ocr` on `PATH`
+   - Supports optional backend and language arguments
+   - Preserves the existing CLI clipboard behavior
+
+2. Updated the user documentation in `README.md`.
+   - Added a dedicated Raycast installation section
+   - Documented the included script path and import flow
+   - Documented the `MACOCR_BIN` override
+   - Noted that Raycast may also need screen recording permission
+
+3. Updated `docs/project-overview.md`.
+   - Added the new `raycast/` directory to the repository shape
+   - Documented the wrapper script's responsibility and binary resolution order
+
+### Validation Performed
+
+1. Confirmed that the existing release binary is present.
+   - Verified `build/Release/ocr` exists and is executable
+
+2. Re-ran the CLI help output.
+   - `build/Release/ocr --help` completed successfully
+
+3. Verified the wrapper script locally.
+   - `bash -n raycast/ocr-capture.sh` completed successfully
+   - `MACOCR_BIN=/bin/echo bash raycast/ocr-capture.sh vision zh-Hans` printed:
+     - `--backend vision --language zh-Hans`
+
+### Important Notes
+
+1. The Raycast integration is intentionally thin.
+   - It delegates all OCR behavior to `ocr`
+   - Future OCR feature work should continue to happen in `ocr/main.swift`
+
+2. The wrapper prefers the local release build first.
+   - This makes repository-local testing predictable
+   - Users with a separately installed binary can override it with `MACOCR_BIN`
+
+### Files Changed During This Work
+
+- `raycast/ocr-capture.sh`
+- `README.md`
+- `docs/project-overview.md`
+- `docs/development-log.md`
+
 ## 2026-03-25
 
 ### Scope
