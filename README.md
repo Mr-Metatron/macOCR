@@ -251,7 +251,7 @@ Run `ocr --list-languages` to see all available Vision languages on your system.
 3. Add `Run Shell script`
 4. Set input to one of these (runs this app):
   - `/opt/homebrew/bin/ocr` (if installed via Homebrew on Apple Silicon)
-  - `/usr/local/bin/ocr` (if installed manually or built from source)
+  - `/usr/local/bin/ocr` (if installed manually, built from source, or via Homebrew on Intel)
 5. Goto `Shortcut Details`
 
 <img width="300px" src="https://user-images.githubusercontent.com/11782590/164676495-3c07a73f-5254-47eb-a4ff-d6a943617954.png" alt="settings" />

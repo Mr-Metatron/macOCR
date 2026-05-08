@@ -1,0 +1,64 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CocoaPods
+        run: pod install
+
+      - name: Build (${{ matrix.arch }})
+        run: |
+          xcodebuild -workspace ocr.xcworkspace \
+            -scheme ocr \
+            -configuration Release \
+            -derivedDataPath build \
+            ARCHS="${{ matrix.arch }}" \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Prepare artifact
+        run: |
+          cp build/Build/Products/Release/ocr ocr
+          chmod +x ocr
+          file ocr
+          tar czf macOCR-${{ matrix.arch }}.tar.gz ocr
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOCR-${{ matrix.arch }}
+          path: macOCR-${{ matrix.arch }}.tar.gz
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            macOCR-x86_64.tar.gz
+            macOCR-arm64.tar.gz
